@@ -24,3 +24,5 @@ hs_err_pid*
 
 # postgres_data
 *postgres_data*
+
+*.idea

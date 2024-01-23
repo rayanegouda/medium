@@ -1,0 +1,90 @@
+version: '3.8'
+services:
+    kafka-1:
+        image: debezium/kafka:2.4
+        container_name: kafka-1
+        ports:
+            - 9092:9092
+        environment:
+            - CLUSTER_ID=ZGRkZDM1YTA1MzQwNGQyYT
+            - BROKER_ID=1
+            - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9092,2@kafka-2:9093,3@kafka-3:9094
+            - KAFKA_LISTENERS=INTERNAL://:29092,EXTERNAL://:39092,CONTROLLER://kafka-1:9092
+            - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka-1:29092,EXTERNAL://localhost:39092
+            - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+            - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    kafka-2:
+        image: debezium/kafka:2.4
+        container_name: kafka-2
+        ports:
+            - 9093:9093
+        environment:
+            - CLUSTER_ID=ZGRkZDM1YTA1MzQwNGQyYT
+            - BROKER_ID=2
+            - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9092,2@kafka-2:9093,3@kafka-3:9094
+            - KAFKA_LISTENERS=INTERNAL://:29093,EXTERNAL://:39093,CONTROLLER://kafka-2:9093
+            - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka-2:29093,EXTERNAL://localhost:39093
+            - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+            - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    kafka-3:
+        image: debezium/kafka:2.4
+        container_name: kafka-3
+        ports:
+            - 9094:9094
+        environment:
+            - CLUSTER_ID=ZGRkZDM1YTA1MzQwNGQyYT
+            - BROKER_ID=3
+            - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9092,2@kafka-2:9093,3@kafka-3:9094
+            - KAFKA_LISTENERS=INTERNAL://:29094,EXTERNAL://:39094,CONTROLLER://kafka-3:9094
+            - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka-3:29094,EXTERNAL://localhost:39094
+            - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+            - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    kconnect:
+        image: debezium/connect:2.5
+        container_name: kconnect
+        ports:
+            - 8083:8083
+            - 9012:9012
+        environment:
+            CONFIG_STORAGE_TOPIC: my_connect_configs
+            OFFSET_STORAGE_TOPIC: my_connect_offsets
+            STATUS_STORAGE_TOPIC: my_connect_statuses
+            BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29093,kafka-3:29094
+            KAFKA_CONNECT_PLUGINS_DIR: /kafka/connect/
+            CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+            CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+        depends_on:
+            - kafka-1
+            - kafka-2
+            - kafka-3
+        volumes:
+            #When you follow debezium documentation
+            - ./lib-registry-doc-debezium:/kafka/connect/libs
+            #- ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs
+    schema-registry:
+        image: confluentinc/cp-schema-registry:7.5.3
+        container_name: schema-registry
+        hostname: schema-registry
+        environment:
+            SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29093,kafka-3:29094
+            SCHEMA_REGISTRY_HOST_NAME: schema-registry
+            SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081,http://localhost:8081
+        ports:
+            - 8081:8081
+        depends_on:
+            - kafka-1
+            - kafka-2
+            - kafka-3
+    db:
+        container_name: db
+        image: postgres:16.1-alpine3.19
+        restart: always
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+        ports:
+            - '5432:5432'
+        volumes:
+            - ./postgres_data:/var/lib/postgresql/data
+            - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+        command: [ "postgres", "-c", "wal_level=logical" ]

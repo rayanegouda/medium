@@ -59,8 +59,8 @@ services:
             - kafka-3
         volumes:
             #When you follow debezium documentation
-            - ./lib-registry-doc-debezium:/kafka/connect/libs
-            #- ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs
+            #- ./lib-registry-doc-debezium:/kafka/connect/libs
+            - ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs
     schema-registry:
         image: confluentinc/cp-schema-registry:7.5.3
         container_name: schema-registry

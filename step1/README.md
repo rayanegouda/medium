@@ -8,7 +8,7 @@ My project is as follows: deploy a debezium postgresql connector that will feed 
 For this I used the docker images: debezium/kafka:2.4, debezium/connect:2.5 and confluentinc/cp-schema-registry:7.5.3.
 
 # Démo
-- With Debezium recommandations
+- With Debezium recommandations [./lib-registry-doc-debezium:/kafka/connect/libs]
 	- Push "debezium-connector-postgres" on kconnect
 
 ```
@@ -83,7 +83,93 @@ Result:
 ```
 
 
-
-
 * Solution
+- With Debezium recommandations [- ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs]
+	- Push "debezium-connector-postgres" on kconnect
 
+```
+docker exec -it kconnect curl -s -XPOST -H "Content-Type: application/json; charset=UTF-8" http://localhost:8083/connectors/ -d '
+{
+    "name": "debezium-connector-postgres",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "database.hostname": "db",
+        "database.port": "5432",
+        "database.user": "postgres",
+        "database.password": "postgres",
+        "database.dbname" : "postgres",
+        "database.whitelist": "connect_schema",
+        "table.include.list": "connect_schema.students",
+        "topic.prefix": "my_connect_debezium",
+        "plugin.name": "pgoutput",
+        "key.converter.schema.registry.url": "http://schema-registry:8081",
+        "value.converter.schema.registry.url": "http://schema-registry:8081",
+        "key.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter": "io.confluent.connect.avro.AvroConverter"
+    }
+}' | jq .
+```
+Result:
+```
+{
+  "name": "debezium-connector-postgres",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "db",
+    "database.port": "5432",
+    "database.user": "postgres",
+    "database.password": "postgres",
+    "database.dbname": "postgres",
+    "database.whitelist": "connect_schema",
+    "table.include.list": "connect_schema.students",
+    "topic.prefix": "my_connect_debezium",
+    "plugin.name": "pgoutput",
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "name": "debezium-connector-postgres"
+  },
+  "tasks": [],
+  "type": "source"
+}
+```
+
+I check the connector status:
+```
+docker exec -it kconnect curl -s localhost:8083/connectors/debezium-connector-postgres/status | jq .
+```
+Result:
+```
+{
+  "name": "debezium-connector-postgres",
+  "connector": {
+    "state": "RUNNING",
+    "worker_id": "172.19.0.6:8083"
+  },
+  "tasks": [
+    {
+      "id": 0,
+      "state": "RUNNING",
+      "worker_id": "172.19.0.6:8083"
+    }
+  ],
+  "type": "source"
+}
+```
+
+docker exec -it kafka-2 ./bin/kafka-console-consumer.sh --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students --from-beginning
+ Il faut juste ajouter la conf du avro soit sur le conneccteur soit sur le cluster pas les 2
+
+docker-compose exec kafka-1 kafka-console-consumer --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students --from-beginning
+
+
+docker exec -ti kafka-1 /kafka/bin/kafka-topics.sh --list --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094
+
+
+my_connect_debezium.connect_schema.students
+my_connect_debezium.connect_schema.students
+docker exec schema-registry kafka-avro-console-consumer --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students --property schema.registry.url=http://schema-registry:8081 --from-beginning
+
+
+docker exec schema-registry kafka-avro-console-consumer --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students  --from-beginning

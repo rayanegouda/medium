@@ -82,7 +82,6 @@ Result:
 }
 ```
 
-
 * Solution
 - With Debezium recommandations [- ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs]
 	- Push "debezium-connector-postgres" on kconnect
@@ -157,19 +156,3 @@ Result:
   "type": "source"
 }
 ```
-
-docker exec -it kafka-2 ./bin/kafka-console-consumer.sh --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students --from-beginning
- Il faut juste ajouter la conf du avro soit sur le conneccteur soit sur le cluster pas les 2
-
-docker-compose exec kafka-1 kafka-console-consumer --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students --from-beginning
-
-
-docker exec -ti kafka-1 /kafka/bin/kafka-topics.sh --list --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094
-
-
-my_connect_debezium.connect_schema.students
-my_connect_debezium.connect_schema.students
-docker exec schema-registry kafka-avro-console-consumer --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students --property schema.registry.url=http://schema-registry:8081 --from-beginning
-
-
-docker exec schema-registry kafka-avro-console-consumer --bootstrap-server kafka-1:29092,kafka-2:29093,kafka-3:29094 --topic my_connect_debezium.connect_schema.students  --from-beginning

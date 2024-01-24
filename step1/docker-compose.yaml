@@ -51,16 +51,14 @@ services:
             STATUS_STORAGE_TOPIC: my_connect_statuses
             BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29093,kafka-3:29094
             KAFKA_CONNECT_PLUGINS_DIR: /kafka/connect/
-            CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-            CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
         depends_on:
             - kafka-1
             - kafka-2
             - kafka-3
         volumes:
             #When you follow debezium documentation
-            #- ./lib-registry-doc-debezium:/kafka/connect/libs
-            - ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs
+            - ./lib-registry-doc-debezium:/kafka/connect/libs
+            #- ./confluentinc-kafka-connect-avro-converter-7.5.3/lib:/kafka/connect/libs
     schema-registry:
         image: confluentinc/cp-schema-registry:7.5.3
         container_name: schema-registry
